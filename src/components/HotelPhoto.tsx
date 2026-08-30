@@ -19,7 +19,15 @@ export function HotelPhoto({
     <div className={`relative overflow-hidden bg-sand ${className}`}>
       <div className="absolute inset-0 bg-gradient-to-br from-sea/15 via-sand to-navy/10" />
       {shown ? (
-        <Image src={shown} alt={alt} fill className="object-cover" sizes={sizes} unoptimized />
+        <Image
+          src={shown}
+          alt={alt}
+          fill
+          className="object-cover"
+          sizes={sizes}
+          unoptimized
+          referrerPolicy="no-referrer"
+        />
       ) : (
         <span className="sr-only">{alt}</span>
       )}

@@ -11,7 +11,7 @@ const MANIFEST = "hotel-images.json";
 const PUBLIC_DIR = path.join(process.cwd(), "public", "hotels");
 const MAX_FETCH_PER_RUN = 40;
 const CONCURRENCY = 4;
-const PAGE_TIMEOUT_MS = 8000;
+const PAGE_TIMEOUT_MS = 12_000;
 const IMAGE_TIMEOUT_MS = 8000;
 const MIN_BYTES = 16_000;
 const MAX_BYTES = 4_000_000;
@@ -40,14 +40,26 @@ function fileOnDisk(fileName: string): string {
   return path.join(PUBLIC_DIR, fileName);
 }
 
-function hasUsableImage(entry: ManifestEntry | undefined): entry is ManifestEntry & { path: string } {
-  if (!entry?.path) return false;
+function isRemoteUrl(value: string | null | undefined): value is string {
+  return Boolean(value && /^https?:\/\//i.test(value));
+}
+
+function hasLocalFile(entry: ManifestEntry | undefined): entry is ManifestEntry & { path: string } {
+  if (!entry?.path || isRemoteUrl(entry.path)) return false;
   const name = entry.path.replace(/^\/hotels\//, "");
   return existsSync(fileOnDisk(name));
 }
 
+function hotelSrc(entry: ManifestEntry | undefined, existing?: string | null): string | null {
+  if (hasLocalFile(entry)) return entry.path;
+  if (isRemoteUrl(entry?.sourceUrl)) return entry.sourceUrl;
+  if (isRemoteUrl(entry?.path)) return entry.path;
+  if (isRemoteUrl(existing)) return existing;
+  return null;
+}
+
 function recentMiss(entry: ManifestEntry | undefined): boolean {
-  if (!entry || entry.path) return false;
+  if (!entry || hotelSrc(entry)) return false;
   const then = Date.parse(entry.fetchedAt);
   return !Number.isNaN(then) && Date.now() - then < MISS_TTL_MS;
 }
@@ -112,6 +124,19 @@ function extractPageImages(html: string, baseUrl: string): string[] {
   consider($('meta[property="og:image:url"]').attr("content"));
   consider($('meta[name="twitter:image"]').attr("content"));
   consider($('link[rel="image_src"]').attr("href"));
+  $('script[type="application/ld+json"]').each((_, el) => {
+    try {
+      const json = JSON.parse($(el).text()) as { image?: unknown };
+      const image = json.image;
+      if (typeof image === "string") consider(image);
+      else if (Array.isArray(image) && typeof image[0] === "string") consider(image[0]);
+      else if (image && typeof image === "object" && "url" in image && typeof image.url === "string") {
+        consider(image.url);
+      }
+    } catch {
+      // ignore invalid JSON-LD
+    }
+  });
 
   $("img[src]").each((_, el) => {
     const src = $(el).attr("src") ?? "";
@@ -162,19 +187,29 @@ async function downloadImage(sourceUrl: string, key: string): Promise<string | n
   }
 }
 
-async function resolveHotelImage(chainId: Deal["chainId"], hotelName: string, bookingUrl: string): Promise<ManifestEntry> {
+async function resolveHotelImage(
+  chainId: Deal["chainId"],
+  hotelName: string,
+  bookingUrl: string,
+  options?: { download?: boolean },
+): Promise<ManifestEntry> {
   const now = new Date().toISOString();
   const pages = officialHotelPageUrls(chainId, hotelName, bookingUrl);
   const key = hotelImageKey(chainId, hotelName);
+  let firstRemote: string | undefined;
   for (const pageUrl of pages) {
     const html = await fetchHtml(pageUrl);
     if (!html) continue;
     for (const imageUrl of extractPageImages(html, pageUrl).slice(0, 5)) {
+      firstRemote ??= imageUrl;
+      if (options?.download === false) {
+        return { path: null, sourceUrl: imageUrl, fetchedAt: now };
+      }
       const stored = await downloadImage(imageUrl, key);
       if (stored) return { path: stored, sourceUrl: imageUrl, fetchedAt: now };
     }
   }
-  return { path: null, fetchedAt: now };
+  return { path: null, sourceUrl: firstRemote, fetchedAt: now };
 }
 
 async function mapLimit<T>(items: T[], limit: number, worker: (item: T) => Promise<void>): Promise<void> {
@@ -194,13 +229,11 @@ let fillInFlight: Promise<void> | null = null;
 function attachCachedImages(deals: Deal[], manifest: Manifest): Deal[] {
   return deals.map((deal) => {
     const entry = manifest[hotelImageKey(deal.chainId, deal.hotelName)];
-    return { ...deal, imageUrl: hasUsableImage(entry) ? entry.path : null };
+    return { ...deal, imageUrl: hotelSrc(entry, deal.imageUrl) };
   });
 }
 
-function queueBackgroundFill(deals: Deal[], manifest: Manifest): void {
-  if (fillInFlight) return;
-
+function missingHotels(deals: Deal[], manifest: Manifest, limit: number) {
   const unique = new Map<string, { deal: Deal; count: number }>();
   for (const deal of deals) {
     const key = hotelImageKey(deal.chainId, deal.hotelName);
@@ -209,28 +242,44 @@ function queueBackgroundFill(deals: Deal[], manifest: Manifest): void {
     else unique.set(key, { deal, count: 1 });
   }
 
-  const missing = [...unique.entries()]
-    .filter(([key]) => {
-      const entry = manifest[key];
-      return !hasUsableImage(entry) && !recentMiss(entry);
-    })
+  return [...unique.entries()]
+    .filter(([key, { deal }]) => !hotelSrc(manifest[key], deal.imageUrl) && !recentMiss(manifest[key]))
     .sort((a, b) => b[1].count - a[1].count)
-    .slice(0, MAX_FETCH_PER_RUN);
+    .slice(0, limit);
+}
 
+async function fillMissing(
+  deals: Deal[],
+  manifest: Manifest,
+  options: { limit: number; download: boolean },
+): Promise<void> {
+  const missing = missingHotels(deals, manifest, options.limit);
   if (missing.length === 0) return;
 
-  fillInFlight = mapLimit(missing, CONCURRENCY, async ([key, { deal }]) => {
+  await mapLimit(missing, CONCURRENCY, async ([key, { deal }]) => {
     const next = readJsonFile<Manifest>(MANIFEST, manifest);
-    if (hasUsableImage(next[key]) || recentMiss(next[key])) return;
-    next[key] = await resolveHotelImage(deal.chainId, deal.hotelName, deal.bookingUrl);
+    if (hotelSrc(next[key], deal.imageUrl) || recentMiss(next[key])) return;
+    next[key] = await resolveHotelImage(deal.chainId, deal.hotelName, deal.bookingUrl, {
+      download: options.download,
+    });
     writeJsonFile(MANIFEST, next);
-  }).finally(() => {
+    manifest[key] = next[key];
+  });
+}
+
+function queueBackgroundFill(deals: Deal[], manifest: Manifest): void {
+  if (fillInFlight) return;
+  fillInFlight = fillMissing(deals, manifest, { limit: MAX_FETCH_PER_RUN, download: true }).finally(() => {
     fillInFlight = null;
   });
 }
 
-export async function stampHotelImages(deals: Deal[]): Promise<Deal[]> {
+export async function stampHotelImages(deals: Deal[], options?: { wait?: boolean }): Promise<Deal[]> {
   const manifest = readJsonFile<Manifest>(MANIFEST, {});
+  if (options?.wait) {
+    await fillMissing(deals, manifest, { limit: 300, download: false });
+    return attachCachedImages(deals, readJsonFile<Manifest>(MANIFEST, manifest));
+  }
   const attached = attachCachedImages(deals, manifest);
   queueBackgroundFill(deals, manifest);
   return attached;

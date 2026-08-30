@@ -12,6 +12,7 @@ const nextConfig: NextConfig = {
       { pathname: "/logo.png" },
       { pathname: "/logo.jpg" },
     ],
+    remotePatterns: [{ protocol: "https", hostname: "**" }],
   },
   turbopack: {
     root: path.resolve(__dirname),

@@ -3,6 +3,12 @@ import { dealCity } from "@/lib/deal-tags";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import type { Deal } from "@/lib/types";
 
+function absoluteMediaUrl(src: string | null | undefined): string {
+  if (!src) return `${SITE_URL}/logo.png`;
+  if (/^https?:\/\//i.test(src)) return src;
+  return `${SITE_URL}${src.startsWith("/") ? src : `/${src}`}`;
+}
+
 export function DealJsonLd({ deals, pageUrl, name }: { deals: Deal[]; pageUrl: string; name: string }) {
   const offers = deals.slice(0, 30).map((deal) => ({
     "@type": "Offer",
@@ -17,7 +23,7 @@ export function DealJsonLd({ deals, pageUrl, name }: { deals: Deal[]; pageUrl: s
     itemOffered: {
       "@type": "Hotel",
       name: deal.hotelName,
-      image: deal.imageUrl || deal.cityImageUrl ? `${SITE_URL}${deal.imageUrl || deal.cityImageUrl}` : `${SITE_URL}/logo.png`,
+      image: absoluteMediaUrl(deal.imageUrl || deal.cityImageUrl),
       address: dealCity(deal) ? { "@type": "PostalAddress", addressLocality: dealCity(deal), addressCountry: "IL" } : undefined,
     },
   }));

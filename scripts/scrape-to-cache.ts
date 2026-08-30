@@ -1,5 +1,6 @@
 import { writeFileSync } from "node:fs";
 import path from "node:path";
+import { stampHotelImages } from "../src/lib/hotel-images";
 import { fetchAllDeals } from "../src/lib/scrapers";
 
 const outFile = path.resolve(process.cwd(), "deals-cache.json");
@@ -10,12 +11,14 @@ async function main(): Promise<void> {
     forceLive: true,
     skipStamps: true,
   });
-  writeFileSync(outFile, `${JSON.stringify(payload)}\n`, "utf8");
-  const byChain = payload.deals.reduce<Record<string, number>>((acc, deal) => {
+  const deals = await stampHotelImages(payload.deals, { wait: true });
+  const withPhoto = deals.filter((deal) => deal.imageUrl).length;
+  writeFileSync(outFile, `${JSON.stringify({ ...payload, deals })}\n`, "utf8");
+  const byChain = deals.reduce<Record<string, number>>((acc, deal) => {
     acc[deal.chainId] = (acc[deal.chainId] ?? 0) + 1;
     return acc;
   }, {});
-  console.log(`Wrote ${payload.deals.length} deals to ${outFile}`);
+  console.log(`Wrote ${deals.length} deals (${withPhoto} with hotel photos) to ${outFile}`);
   console.log(JSON.stringify(byChain, null, 2));
   if (payload.errors.length) {
     console.log("errors", payload.errors);
