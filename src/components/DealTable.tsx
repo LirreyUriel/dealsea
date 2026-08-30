@@ -1,7 +1,7 @@
 import { ExternalLink } from "lucide-react";
-import { dealBookingUrl } from "@/lib/booking-url";
 import { formatDateRange, formatPricePerNight, formatPublishedAgo } from "@/lib/format";
 import type { Deal } from "@/lib/types";
+import { DealCtaLink } from "./DealCtaLink";
 import { HotelPhoto } from "./HotelPhoto";
 
 export function DealTable({ deals }: { deals: Deal[] }) {
@@ -49,15 +49,13 @@ export function DealTable({ deals }: { deals: Deal[] }) {
               </td>
               <td className="px-4 py-4 text-ink-soft">{formatDateRange(deal.validFrom, deal.validTo)}</td>
               <td className="px-4 py-4">
-                <a
-                  href={dealBookingUrl(deal)}
-                  target="_blank"
-                  rel="noreferrer"
+                <DealCtaLink
+                  deal={deal}
                   className="inline-flex items-center gap-1 font-medium text-sea hover:underline"
                 >
                   תפוס את הדיל
                   <ExternalLink className="h-3.5 w-3.5" />
-                </a>
+                </DealCtaLink>
               </td>
             </tr>
           ))}

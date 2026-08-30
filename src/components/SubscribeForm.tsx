@@ -1,5 +1,6 @@
 "use client";
 
+import { track } from "@vercel/analytics";
 import { useState } from "react";
 
 export function SubscribeForm() {
@@ -24,6 +25,8 @@ export function SubscribeForm() {
         setMessage(payload.message ?? "ההרשמה נכשלה. נסו שוב.");
         return;
       }
+      // club_subscribe: successful דילסי קלאב signup (נתראה!) — no email/name
+      track("club_subscribe");
       setStatus("ok");
       setName("");
       setEmail("");

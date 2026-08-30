@@ -1,5 +1,6 @@
 import type { Browser, Page } from "playwright";
 import { CHAIN_BY_ID } from "../chains";
+import { lookupHotelPhoto } from "../hotel-photo-fallbacks";
 import { parseDealText, parsePriceIls } from "../parse-deal";
 import type { Deal } from "../types";
 import { launchBrowser, loadPlaywright } from "./playwright-browser";
@@ -67,6 +68,7 @@ interface IsrotelRawCard {
   description: string;
   priceText: string;
   sale: IsrotelSaleJson | null;
+  imageUrl: string;
 }
 
 function cleanText(value: string | null | undefined): string {
@@ -184,6 +186,7 @@ function toDeal(raw: IsrotelRawCard): Deal | null {
     bookingUrl: bookingUrl(hotel, saleId, validFrom, validTo),
     location: hotel.location || null,
     source: "live",
+    imageUrl: raw.imageUrl || lookupHotelPhoto("isrotel", hotel.nameHe),
   };
 }
 
@@ -219,11 +222,30 @@ async function extractRawCards(page: Page): Promise<IsrotelRawCard[]> {
         description: sale.ShortDescription ?? "",
         priceText: sale.BestPrice?.Prices?.ILS != null ? String(sale.BestPrice.Prices.ILS) : "",
         sale,
+        imageUrl: "",
       }));
     }
 
     return cards.map((card) => {
       const saleId = card.getAttribute("data-saleid");
+      const imageRaw =
+        [...card.querySelectorAll("img")]
+          .map((img) => {
+            const node = img as HTMLImageElement;
+            return (
+              node.getAttribute("data-src") ||
+              node.getAttribute("src") ||
+              node.currentSrc ||
+              ""
+            );
+          })
+          .find((src) => src && !src.startsWith("data:") && !/logo|icon|sprite|pixel|1x1|\.svg/i.test(src)) ?? "";
+      let imageUrl = "";
+      try {
+        imageUrl = imageRaw ? new URL(imageRaw, location.origin).toString() : "";
+      } catch {
+        imageUrl = "";
+      }
       return {
         saleId,
         hotelCode: card.getAttribute("data-hotel"),
@@ -231,6 +253,7 @@ async function extractRawCards(page: Page): Promise<IsrotelRawCard[]> {
         description: card.querySelector(".card__description")?.textContent ?? "",
         priceText: card.querySelector(".ux-ui-price, .card__price")?.textContent ?? "",
         sale: saleId ? (salesById.get(saleId) ?? null) : null,
+        imageUrl,
       };
     });
   });

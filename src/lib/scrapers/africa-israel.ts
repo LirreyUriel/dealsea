@@ -26,6 +26,7 @@ interface AfiRawCard {
   priceText: string;
   description: string;
   bookingUrl: string;
+  imageUrl: string;
 }
 
 function cleanText(value: string): string {
@@ -81,6 +82,7 @@ function toDeal(raw: AfiRawCard): Deal | null {
     bookingUrl: raw.bookingUrl,
     location: inferLocation(`${hotelName} ${title}`),
     source: "live",
+    imageUrl: raw.imageUrl || null,
   };
 }
 
@@ -134,6 +136,27 @@ async function extractCards(page: Page): Promise<AfiRawCard[]> {
           ) ||
           "";
         const href = (el.querySelector("a[href*='deal?']") as HTMLAnchorElement | null)?.href ?? "";
+        const imageRaw =
+          [...el.querySelectorAll("img")]
+            .map((img) => {
+              const node = img as HTMLImageElement;
+              return (
+                node.getAttribute("data-src") ||
+                node.getAttribute("data-lazy") ||
+                node.getAttribute("src") ||
+                node.currentSrc ||
+                ""
+              );
+            })
+            .find((src) => src && !src.startsWith("data:") && !/logo|icon|sprite|pixel|1x1|\.svg/i.test(src)) ??
+          (el.getAttribute("style") || "").match(/url\(["']?([^"')]+)["']?\)/)?.[1] ??
+          "";
+        let imageUrl = "";
+        try {
+          imageUrl = imageRaw ? new URL(imageRaw, location.origin).toString() : "";
+        } catch {
+          imageUrl = "";
+        }
         return {
           hotelName,
           title,
@@ -141,6 +164,7 @@ async function extractCards(page: Page): Promise<AfiRawCard[]> {
           priceText,
           description: clean(el.textContent || ""),
           bookingUrl: href,
+          imageUrl,
         };
       })
       .filter((card) => card.bookingUrl.includes("deal?"));

@@ -40,6 +40,7 @@ next-env.d.ts
 # local product data
 /data/first-seen.json
 /data/subscribers.json
+/data/deal-clicks.json
 /data/hotel-images.json
 /public/hotels/
 /deals-cache.json

@@ -1,8 +1,8 @@
 import { CalendarRange, ExternalLink, MoonStar } from "lucide-react";
 import { isClubDeal, isIdfDeal, isWeekendHighlight } from "@/lib/deal-tags";
-import { dealBookingUrl } from "@/lib/booking-url";
 import { daysUntil, formatDateRange, formatMinNights, formatPricePerNight, formatPublishedAgo } from "@/lib/format";
 import type { Deal } from "@/lib/types";
+import { DealCtaLink } from "./DealCtaLink";
 import { HotelPhoto } from "./HotelPhoto";
 
 export type CardTag = "idf" | "club" | "weekend";
@@ -85,15 +85,13 @@ export function DealCard({ deal, asOf, hiddenTags = [] }: DealCardProps) {
           )}
         </div>
 
-        <a
-          href={dealBookingUrl(deal)}
-          target="_blank"
-          rel="noreferrer"
+        <DealCtaLink
+          deal={deal}
           className="inline-flex items-center justify-center gap-2 rounded-2xl bg-sea px-4 py-3 text-sm font-semibold text-white transition hover:bg-sea-dark"
         >
           תפוס את הדיל
           <ExternalLink className="h-4 w-4" />
-        </a>
+        </DealCtaLink>
       </div>
     </article>
   );

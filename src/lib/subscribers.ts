@@ -3,6 +3,7 @@ import { readJsonFile, writeJsonFile } from "./json-store";
 export interface Subscriber {
   name: string;
   email: string;
+  message: string;
   createdAt: string;
 }
 
@@ -20,7 +21,12 @@ export function addSubscriber(name: string, email: string): { ok: true } | { ok:
     return { ok: false, message: "כתובת המייל כבר רשומה לקלאב." };
   }
 
-  list.push({ name: trimmedName, email: trimmedEmail, createdAt: new Date().toISOString() });
+  list.push({
+    name: trimmedName,
+    email: trimmedEmail,
+    message: `${trimmedName}, ${trimmedEmail}`,
+    createdAt: new Date().toISOString(),
+  });
   writeJsonFile(FILE, list);
   return { ok: true };
 }

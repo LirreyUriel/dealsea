@@ -1,6 +1,7 @@
 import axios from "axios";
 import { saleStayDates, withDanStayDates } from "../booking-url";
 import { CHAIN_BY_ID } from "../chains";
+import { lookupHotelPhoto } from "../hotel-photo-fallbacks";
 import { parseDealText } from "../parse-deal";
 import type { Deal } from "../types";
 
@@ -9,23 +10,27 @@ const DAN_ORIGIN = "https://www.danhotels.co.il";
 const DAN_GRAPHQL = "https://api.danhotels.co.il/apinew/graphql";
 const CHAIN = CHAIN_BY_ID.dan;
 
+function seedHotel(id: string, name: string, dealsPath: string): DanHotel {
+  return { id, name, dealsPath, imageUrl: lookupHotelPhoto("dan", name) ?? undefined };
+}
+
 const SEEDED_HOTELS: DanHotel[] = [
-  { id: "10118", name: "המלך דוד ירושלים", dealsPath: "/JerusalemHotels/KingDavidJerusalemHotel/Deals" },
-  { id: "10121", name: "דן ירושלים", dealsPath: "/JerusalemHotels/DanJerusalemHotel/Deals" },
-  { id: "10119", name: "דן פנורמה ירושלים", dealsPath: "/JerusalemHotels/DanPanoramaJerusalemHotel/Deals" },
-  { id: "10120", name: "דן בוטיק ירושלים", dealsPath: "/JerusalemHotels/DanBoutiqueJerusalemHotel/Deals" },
-  { id: "10122", name: "דן תל אביב", dealsPath: "/TelAvivHotels/DanTelAvivHotel/Deals" },
-  { id: "10123", name: "דן פנורמה תל אביב", dealsPath: "/TelAvivHotels/DanPanoramaTelAvivHotel/Deals" },
-  { id: "10537", name: "לינק תל אביב", dealsPath: "/TelAvivHotels/LinkHotelHubHotel/Deals" },
-  { id: "10124", name: "דן אילת", dealsPath: "/EilatHotels/DanEilatHotel/Deals" },
-  { id: "10125", name: "דן פנורמה אילת", dealsPath: "/EilatHotels/DanPanoramaEilatHotel/Deals" },
-  { id: "10706", name: "נפטון אילת", dealsPath: "/EilatHotels/NeptuneEilatHotel/Deals" },
-  { id: "10126", name: "דן כרמל חיפה", dealsPath: "/HaifaHotels/DanCarmelHaifaHotel/Deals" },
-  { id: "10127", name: "דן פנורמה חיפה", dealsPath: "/HaifaHotels/DanPanoramaHaifaHotel/Deals" },
-  { id: "10129", name: "דן אכדיה ריזורט", dealsPath: "/TelAvivHotels/DanAccadiaHerzliyaHotel/Deals" },
-  { id: "10130", name: "דן קיסריה ריזורט", dealsPath: "/CaesareaHotels/DanCaesareaHotel/Deals" },
-  { id: "10698", name: "רות צפת", dealsPath: "/NorthHotels/RuthSafedHotel/Deals" },
-  { id: "10697", name: "המעיין נצרת", dealsPath: "/NorthHotels/MarysWellNazarethHotel/Deals" },
+  seedHotel("10118", "המלך דוד ירושלים", "/JerusalemHotels/KingDavidJerusalemHotel/Deals"),
+  seedHotel("10121", "דן ירושלים", "/JerusalemHotels/DanJerusalemHotel/Deals"),
+  seedHotel("10119", "דן פנורמה ירושלים", "/JerusalemHotels/DanPanoramaJerusalemHotel/Deals"),
+  seedHotel("10120", "דן בוטיק ירושלים", "/JerusalemHotels/DanBoutiqueJerusalemHotel/Deals"),
+  seedHotel("10122", "דן תל אביב", "/TelAvivHotels/DanTelAvivHotel/Deals"),
+  seedHotel("10123", "דן פנורמה תל אביב", "/TelAvivHotels/DanPanoramaTelAvivHotel/Deals"),
+  seedHotel("10537", "לינק תל אביב", "/TelAvivHotels/LinkHotelHubHotel/Deals"),
+  seedHotel("10124", "דן אילת", "/EilatHotels/DanEilatHotel/Deals"),
+  seedHotel("10125", "דן פנורמה אילת", "/EilatHotels/DanPanoramaEilatHotel/Deals"),
+  seedHotel("10706", "נפטון אילת", "/EilatHotels/NeptuneEilatHotel/Deals"),
+  seedHotel("10126", "דן כרמל חיפה", "/HaifaHotels/DanCarmelHaifaHotel/Deals"),
+  seedHotel("10127", "דן פנורמה חיפה", "/HaifaHotels/DanPanoramaHaifaHotel/Deals"),
+  seedHotel("10129", "דן אכדיה ריזורט", "/TelAvivHotels/DanAccadiaHerzliyaHotel/Deals"),
+  seedHotel("10130", "דן קיסריה ריזורט", "/CaesareaHotels/DanCaesareaHotel/Deals"),
+  seedHotel("10698", "רות צפת", "/NorthHotels/RuthSafedHotel/Deals"),
+  seedHotel("10697", "המעיין נצרת", "/NorthHotels/MarysWellNazarethHotel/Deals"),
 ];
 
 const LOCATION_HINTS: [RegExp, string][] = [
@@ -73,6 +78,7 @@ interface DanHotel {
   id: string;
   name: string;
   dealsPath: string;
+  imageUrl?: string;
 }
 
 interface DanPackage {
@@ -175,6 +181,7 @@ function toDeal(pkg: DanPackage, hotelsById: Map<string, DanHotel>): Deal | null
     bookingUrl: bookingUrl(hotel, pkg, validFrom, validTo, pkg.minLOS && pkg.minLOS > 0 ? pkg.minLOS : parsed.minNights),
     location: inferLocation(hotelName),
     source: "live",
+    imageUrl: hotel?.imageUrl || null,
   };
 }
 
@@ -187,16 +194,28 @@ function hotelsFromDrupal(html: string): DanHotel[] {
         hotelsData?: {
           field_g4_hotel_id?: string;
           field_name?: string;
+          field_offers_image?: string;
+          field_mobile_image?: string;
           links?: { deals?: string };
         }[];
       };
     };
     return (settings.danHotels?.hotelsData ?? [])
-      .map((hotel) => ({
-        id: String(hotel.field_g4_hotel_id ?? ""),
-        name: hotel.field_name ?? "",
-        dealsPath: hotel.links?.deals ?? "",
-      }))
+      .map((hotel) => {
+        const rawImage = hotel.field_offers_image || hotel.field_mobile_image || "";
+        let imageUrl = "";
+        try {
+          imageUrl = rawImage ? new URL(rawImage, DAN_ORIGIN).toString() : "";
+        } catch {
+          imageUrl = "";
+        }
+        return {
+          id: String(hotel.field_g4_hotel_id ?? ""),
+          name: hotel.field_name ?? "",
+          dealsPath: hotel.links?.deals ?? "",
+          imageUrl,
+        };
+      })
       .filter((hotel) => hotel.id);
   } catch {
     return [];

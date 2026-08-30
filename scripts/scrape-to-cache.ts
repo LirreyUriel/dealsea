@@ -11,11 +11,14 @@ async function main(): Promise<void> {
     forceLive: true,
     skipStamps: true,
   });
-  const deals = await stampHotelImages(payload.deals, { wait: true });
+  const deals = await stampHotelImages(payload.deals);
   const withPhoto = deals.filter((deal) => deal.imageUrl).length;
   writeFileSync(outFile, `${JSON.stringify({ ...payload, deals })}\n`, "utf8");
-  const byChain = deals.reduce<Record<string, number>>((acc, deal) => {
-    acc[deal.chainId] = (acc[deal.chainId] ?? 0) + 1;
+  const byChain = deals.reduce<Record<string, { deals: number; photos: number }>>((acc, deal) => {
+    const current = acc[deal.chainId] ?? { deals: 0, photos: 0 };
+    current.deals += 1;
+    if (deal.imageUrl) current.photos += 1;
+    acc[deal.chainId] = current;
     return acc;
   }, {});
   console.log(`Wrote ${deals.length} deals (${withPhoto} with hotel photos) to ${outFile}`);

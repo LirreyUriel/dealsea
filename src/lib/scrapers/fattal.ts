@@ -144,7 +144,7 @@ async function blockNoise(page: Page): Promise<void> {
     ) {
       return route.abort();
     }
-    if (type === "image" || type === "media" || type === "font") {
+    if (type === "media" || type === "font") {
       return route.abort();
     }
     return route.continue();
@@ -189,13 +189,20 @@ async function extractRawCards(page: Page): Promise<FattalRawCard[]> {
 
     for (const heading of headings) {
       let card: HTMLElement | null = heading;
-      for (let i = 0; i < 8 && card?.parentElement; i++) {
+      let scoped: HTMLElement | null = null;
+      for (let i = 0; i < 10 && card?.parentElement; i++) {
         card = card.parentElement;
         const dealLinks = [...card.querySelectorAll("a[href]")].filter((anchor) =>
           /\/deals\/\d+/.test((anchor as HTMLAnchorElement).href || anchor.getAttribute("href") || ""),
         );
-        if (card.querySelectorAll("h3").length === 1 && dealLinks.length >= 1) break;
+        if (card.querySelectorAll("h3").length !== 1 || dealLinks.length < 1) continue;
+        scoped = card;
+        const hasPhoto = Boolean(
+          card.querySelector("img[src], img[data-src], img[srcset], [style*='background-image']"),
+        );
+        if (hasPhoto) break;
       }
+      card = scoped ?? card;
       if (!card) continue;
 
       const href =
@@ -228,14 +235,32 @@ async function extractRawCards(page: Page): Promise<FattalRawCard[]> {
         [...card.querySelectorAll("div, span")]
           .map((node) => (node.textContent || "").replace(/\s+/g, " ").trim())
           .find((text) => /₪\s*\d/.test(text) && text.length < 40) ?? "";
+      const siblingPhoto = card.previousElementSibling;
+      const photoNodes = [
+        ...card.querySelectorAll("img, source, [style*='background']"),
+        ...(siblingPhoto ? siblingPhoto.querySelectorAll("img, source, [style*='background']") : []),
+      ];
       const imageUrl =
-        [...card.querySelectorAll("img")]
-          .map((img) => {
-            const node = img as HTMLImageElement;
-            return node.currentSrc || node.src || node.getAttribute("data-src") || "";
+        photoNodes
+          .map((node) => {
+            const el = node as HTMLImageElement;
+            const srcset = el.getAttribute("srcset") || el.getAttribute("data-srcset") || "";
+            const fromSet = srcset
+              .split(",")
+              .map((part) => part.trim().split(/\s+/)[0])
+              .filter(Boolean)
+              .pop();
+            const bg = (el.getAttribute("style") || "").match(/url\(["']?([^"')]+)["']?\)/)?.[1];
+            return (
+              el.getAttribute("data-src") ||
+              el.getAttribute("data-lazy") ||
+              fromSet ||
+              el.getAttribute("src") ||
+              bg ||
+              ""
+            );
           })
-          .find((src) => src && !/logo|icon|sprite|pixel|1x1|\.svg/i.test(src)) ??
-        (card.getAttribute("style") || "").match(/url\(["']?(https?:[^"')]+)["']?\)/)?.[1] ??
+          .find((src) => src && !src.startsWith("data:") && !/logo|icon|sprite|pixel|1x1|\.svg/i.test(src)) ??
         "";
 
       cards.push({
@@ -248,7 +273,13 @@ async function extractRawCards(page: Page): Promise<FattalRawCard[]> {
         highlights,
         priceText,
         bookingUrl: parsedUrl.toString(),
-        imageUrl,
+        imageUrl: (() => {
+          try {
+            return imageUrl ? new URL(imageUrl, location.origin).toString() : "";
+          } catch {
+            return imageUrl;
+          }
+        })(),
       });
     }
 

@@ -1,6 +1,7 @@
 import * as cheerio from "cheerio";
 import type { Browser, Page } from "playwright";
 import { CHAIN_BY_ID } from "../chains";
+import { extractOgImage, firstCardImageUrl } from "../page-image";
 import { parseDealText, parsePriceIls } from "../parse-deal";
 import type { Deal } from "../types";
 import { launchBrowser, loadPlaywright } from "./playwright-browser";
@@ -195,6 +196,7 @@ function toDeal(input: {
   pageTitle: string;
   url: string;
   index: number;
+  imageUrl?: string | null;
 }): Deal | null {
   const title = cleanText(input.title);
   const description = cleanText(input.description);
@@ -240,11 +242,26 @@ function toDeal(input: {
     bookingUrl: input.url,
     location,
     source: "live",
+    imageUrl: input.imageUrl || null,
   };
+}
+
+function cardImageCandidate($: cheerio.CheerioAPI, card: cheerio.Cheerio<cheerio.Element>): string {
+  const wrap = card.closest("a, article, .card, .elementor-column, .elementor-widget, .elementor-element");
+  const img = wrap.find("img").first().add(card.parent().find("img").first());
+  return (
+    img.attr("src") ||
+    img.attr("data-src") ||
+    img.attr("data-lazy-src") ||
+    img.attr("data-srcset")?.split(",")[0]?.trim().split(/\s+/)[0] ||
+    wrap.find("[style*='background']").first().attr("style")?.match(/url\(["']?([^"')]+)["']?\)/)?.[1] ||
+    ""
+  );
 }
 
 function parseHomepageCards(html: string): Deal[] {
   const $ = cheerio.load(html);
+  const pageImage = extractOgImage(html, ATLAS_HOME);
   const deals: Deal[] = [];
   const seen = new Set<string>();
 
@@ -267,6 +284,7 @@ function parseHomepageCards(html: string): Deal[] {
       pageTitle: title,
       url,
       index: 0,
+      imageUrl: firstCardImageUrl(cardImageCandidate($, card), ATLAS_ORIGIN) || pageImage,
     });
     if (!deal || seen.has(deal.id)) return;
     seen.add(deal.id);
@@ -282,6 +300,7 @@ function parseDealPage(html: string, pageUrl: string): Deal[] {
 
   const title = cleanText($("h1").first().text()) || cleanText($("title").text()).split("|")[0]?.trim();
   if (!title || !isDealPage(title, pageUrl)) return [];
+  const pageImage = extractOgImage(html, pageUrl);
 
   const scope = pageScope($);
   const groups = extractGroups($);
@@ -300,6 +319,7 @@ function parseDealPage(html: string, pageUrl: string): Deal[] {
           pageTitle: title,
           url: pageUrl,
           index,
+          imageUrl: pageImage,
         }),
       )
       .filter((deal): deal is Deal => Boolean(deal));
@@ -311,6 +331,7 @@ function parseDealPage(html: string, pageUrl: string): Deal[] {
     pageTitle: title,
     url: pageUrl,
     index: 0,
+    imageUrl: pageImage,
   });
   return single ? [single] : [];
 }

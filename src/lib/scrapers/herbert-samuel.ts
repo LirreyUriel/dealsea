@@ -1,6 +1,8 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
 import { CHAIN_BY_ID } from "../chains";
+import { lookupHotelPhoto } from "../hotel-photo-fallbacks";
+import { extractOgImage } from "../page-image";
 import { parseDealText } from "../parse-deal";
 import type { Deal } from "../types";
 
@@ -135,6 +137,7 @@ function parseOfferPage(html: string, pageUrl: string): Deal[] {
   $("script, style, noscript, nav, footer, form").remove();
   const pageTitle = cleanText($("h1").first().text() || $("title").text());
   const hotel = hotelFromUrl(pageUrl, pageTitle);
+  const pageImage = extractOgImage(html, pageUrl);
   const deals: Deal[] = [];
   const seen = new Set<string>();
 
@@ -193,6 +196,7 @@ function parseOfferPage(html: string, pageUrl: string): Deal[] {
       bookingUrl,
       location: hotel.location || null,
       source: "live",
+      imageUrl: pageImage || lookupHotelPhoto("herbert-samuel", hotel.name),
     });
   });
 
