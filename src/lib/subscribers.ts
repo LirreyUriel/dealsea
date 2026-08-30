@@ -1,6 +1,7 @@
 import { readJsonFile, writeJsonFile } from "./json-store";
 
 export interface Subscriber {
+  userId: string;
   name: string;
   email: string;
   message: string;
@@ -9,10 +10,17 @@ export interface Subscriber {
 
 const FILE = "subscribers.json";
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const USER_ID = /^[\w-]{8,128}$/;
 
-export function addSubscriber(name: string, email: string): { ok: true } | { ok: false; message: string } {
-  const trimmedName = name.trim();
-  const trimmedEmail = email.trim().toLowerCase();
+export function addSubscriber(input: {
+  name?: string;
+  email?: string;
+  userId?: string;
+}): { ok: true } | { ok: false; message: string } {
+  const trimmedName = (input.name ?? "").trim();
+  const trimmedEmail = (input.email ?? "").trim().toLowerCase();
+  const userId = (input.userId ?? "").trim();
+  if (!USER_ID.test(userId)) return { ok: false, message: "חסר מזהה משתמש." };
   if (trimmedName.length < 2) return { ok: false, message: "נא למלא שם מלא." };
   if (!EMAIL.test(trimmedEmail)) return { ok: false, message: "נא למלא כתובת מייל תקינה." };
 
@@ -22,9 +30,10 @@ export function addSubscriber(name: string, email: string): { ok: true } | { ok:
   }
 
   list.push({
+    userId,
     name: trimmedName,
     email: trimmedEmail,
-    message: `${trimmedName}, ${trimmedEmail}`,
+    message: `${userId}, ${trimmedName}, ${trimmedEmail}`,
     createdAt: new Date().toISOString(),
   });
   writeJsonFile(FILE, list);

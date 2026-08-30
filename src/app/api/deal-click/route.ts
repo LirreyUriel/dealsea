@@ -10,6 +10,10 @@ export async function POST(request: NextRequest) {
     chainId?: string;
     chainName?: string;
     bookingUrl?: string;
+    discountPercent?: number | null;
+    idfFilterOn?: boolean;
+    weekendFilterOn?: boolean;
+    clubFilterOn?: boolean;
     message?: string;
   } | null = null;
   try {

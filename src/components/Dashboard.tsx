@@ -6,6 +6,7 @@ import { filterAndSortDeals } from "@/lib/filter-deals";
 import { HERO_H1, SITE_URL } from "@/lib/site";
 import type { AudienceTag, Deal, DealFilters, DealsResponse, HotelChainId, SortKey } from "@/lib/types";
 import type { CardTag } from "./DealCard";
+import { DealClickFiltersProvider } from "./DealCtaLink";
 import { DealJsonLd } from "./DealJsonLd";
 import { DealSections } from "./DealSections";
 import { EmptyState } from "./EmptyState";
@@ -144,14 +145,22 @@ export function Dashboard({
           ) : visibleDeals.length === 0 ? (
             <EmptyState />
           ) : (
-            <DealSections
-              deals={visibleDeals}
-              asOf={asOf}
-              view={view}
-              page={page}
-              onPageChange={setPage}
-              hiddenTags={hiddenTags}
-            />
+            <DealClickFiltersProvider
+              value={{
+                idfFilterOn: audiences.includes("idf"),
+                weekendFilterOn: weekendOnly,
+                clubFilterOn: audiences.includes("club"),
+              }}
+            >
+              <DealSections
+                deals={visibleDeals}
+                asOf={asOf}
+                view={view}
+                page={page}
+                onPageChange={setPage}
+                hiddenTags={hiddenTags}
+              />
+            </DealClickFiltersProvider>
           )}
         </main>
       </div>

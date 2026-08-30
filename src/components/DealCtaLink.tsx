@@ -1,12 +1,36 @@
 "use client";
 
 import { track } from "@vercel/analytics";
-import type { ReactNode } from "react";
+import { createContext, useContext, type ReactNode } from "react";
 import { dealBookingUrl } from "@/lib/booking-url";
 import type { Deal } from "@/lib/types";
 import { getOrCreateUserId } from "@/lib/user-id";
 
-function logDealClick(deal: Deal, bookingUrl: string) {
+export interface DealClickFilters {
+  idfFilterOn: boolean;
+  weekendFilterOn: boolean;
+  clubFilterOn: boolean;
+}
+
+const DEFAULT_FILTERS: DealClickFilters = {
+  idfFilterOn: false,
+  weekendFilterOn: false,
+  clubFilterOn: false,
+};
+
+const DealClickFiltersContext = createContext<DealClickFilters>(DEFAULT_FILTERS);
+
+export function DealClickFiltersProvider({
+  value,
+  children,
+}: {
+  value: DealClickFilters;
+  children: ReactNode;
+}) {
+  return <DealClickFiltersContext.Provider value={value}>{children}</DealClickFiltersContext.Provider>;
+}
+
+function logDealClick(deal: Deal, bookingUrl: string, filters: DealClickFilters) {
   const userId = getOrCreateUserId();
   if (!userId) return;
 
@@ -17,7 +41,10 @@ function logDealClick(deal: Deal, bookingUrl: string) {
     chainId: deal.chainId,
     chainName: deal.chainName,
     bookingUrl,
-    message: `תפוס את הדיל: ${deal.hotelName}`,
+    discountPercent: deal.discountPercent,
+    idfFilterOn: filters.idfFilterOn,
+    weekendFilterOn: filters.weekendFilterOn,
+    clubFilterOn: filters.clubFilterOn,
   });
 
   try {
@@ -47,6 +74,7 @@ export function DealCtaLink({
   children: ReactNode;
 }) {
   const href = dealBookingUrl(deal);
+  const filters = useContext(DealClickFiltersContext);
 
   return (
     <a
@@ -55,13 +83,18 @@ export function DealCtaLink({
       rel="noreferrer"
       className={className}
       onClick={() => {
-        // grab_deal: click on תפוס את הדיל booking CTA
+        const userId = getOrCreateUserId();
         track("grab_deal", {
           dealId: deal.id,
           chain: deal.chainId,
           hotelName: deal.hotelName,
+          userId,
+          discountPercent: deal.discountPercent,
+          idfFilterOn: filters.idfFilterOn,
+          weekendFilterOn: filters.weekendFilterOn,
+          clubFilterOn: filters.clubFilterOn,
         });
-        logDealClick(deal, href);
+        logDealClick(deal, href, filters);
       }}
     >
       {children}

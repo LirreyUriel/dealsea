@@ -2,6 +2,7 @@
 
 import { track } from "@vercel/analytics";
 import { useState } from "react";
+import { getOrCreateUserId } from "@/lib/user-id";
 
 export function SubscribeForm() {
   const [name, setName] = useState("");
@@ -17,7 +18,7 @@ export function SubscribeForm() {
       const response = await fetch("/api/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email }),
+        body: JSON.stringify({ name, email, userId: getOrCreateUserId() }),
       });
       const payload = (await response.json()) as { ok: boolean; message?: string };
       if (!response.ok || !payload.ok) {
