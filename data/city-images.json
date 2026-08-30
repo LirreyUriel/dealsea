@@ -1,0 +1,75 @@
+{
+  "אילת": {
+    "path": "/cities/eilat.avif",
+    "fetchedAt": "2026-08-30T20:10:12.000Z"
+  },
+  "ים המלח": {
+    "path": "/cities/dead-sea.avif",
+    "fetchedAt": "2026-08-30T20:10:12.000Z"
+  },
+  "תל אביב": {
+    "path": "/cities/tel-aviv.avif",
+    "fetchedAt": "2026-08-30T20:10:12.000Z"
+  },
+  "ירושלים": {
+    "path": "/cities/jerusalem.avif",
+    "fetchedAt": "2026-08-30T20:10:12.000Z"
+  },
+  "הרצליה": {
+    "path": "/cities/herzliya.avif",
+    "fetchedAt": "2026-08-30T20:10:12.000Z"
+  },
+  "חיפה": {
+    "path": "/cities/haifa.avif",
+    "fetchedAt": "2026-08-30T20:10:12.000Z"
+  },
+  "קיסריה": {
+    "path": "/cities/caesarea.avif",
+    "fetchedAt": "2026-08-30T20:10:12.000Z"
+  },
+  "טבריה": {
+    "path": "/cities/tiberias.avif",
+    "fetchedAt": "2026-08-30T20:10:12.000Z"
+  },
+  "כנרת": {
+    "path": "/cities/kinneret.avif",
+    "fetchedAt": "2026-08-30T20:10:12.000Z"
+  },
+  "נתניה": {
+    "path": "/cities/netanya.avif",
+    "fetchedAt": "2026-08-30T20:10:12.000Z"
+  },
+  "אשדוד": {
+    "path": "/cities/ashdod.avif",
+    "fetchedAt": "2026-08-30T20:10:12.000Z"
+  },
+  "נצרת": {
+    "path": "/cities/nazareth.avif",
+    "fetchedAt": "2026-08-30T20:10:12.000Z"
+  },
+  "צפת": {
+    "path": "/cities/safed.avif",
+    "fetchedAt": "2026-08-30T20:10:12.000Z"
+  },
+  "מצפה רמון": {
+    "path": "/cities/mitzpe-ramon.avif",
+    "fetchedAt": "2026-08-30T20:10:12.000Z"
+  },
+  "הנגב": {
+    "path": "/cities/negev.avif",
+    "fetchedAt": "2026-08-30T20:10:12.000Z"
+  },
+  "נתב״ג": {
+    "path": "/cities/israel-coast.avif",
+    "fetchedAt": "2026-08-30T20:10:12.000Z"
+  },
+  "צפון": {
+    "path": "/cities/galilee.avif",
+    "fetchedAt": "2026-08-30T20:10:12.000Z"
+  },
+  "רחובות": {
+    "path": "/cities/city-f1ba84bcb8.avif",
+    "sourceUrl": "https://images.unsplash.com/photo-1646226303063-1e5334284894?auto=format&fit=crop&w=1600&q=80",
+    "fetchedAt": "2026-08-30T20:12:34.924Z"
+  }
+}
