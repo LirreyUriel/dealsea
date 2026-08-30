@@ -60,6 +60,7 @@ function ChainCityView({
   onToggleCity,
   onClearCities,
   onViewChange,
+  expandSelects = false,
 }: Pick<
   FilterBarProps,
   | "selectedChains"
@@ -71,9 +72,9 @@ function ChainCityView({
   | "onToggleCity"
   | "onClearCities"
   | "onViewChange"
->) {
+> & { expandSelects?: boolean }) {
   return (
-    <div className="grid grid-cols-2 gap-2 lg:flex lg:flex-none lg:flex-nowrap">
+    <div className={`grid gap-2 lg:flex lg:flex-none lg:flex-nowrap ${expandSelects ? "grid-cols-1" : "grid-cols-2"}`}>
       <MultiSelect
         label="רשת"
         allLabel="כל הרשתות"
@@ -81,6 +82,7 @@ function ChainCityView({
         selected={selectedChains}
         onToggle={onToggleChain}
         onClear={onClearChains}
+        expandInline={expandSelects}
       />
       {cities.length > 0 && (
         <MultiSelect
@@ -90,6 +92,7 @@ function ChainCityView({
           selected={selectedCities}
           onToggle={onToggleCity}
           onClear={onClearCities}
+          expandInline={expandSelects}
         />
       )}
       <div className="col-span-2 flex h-12 items-center rounded-2xl border border-black/8 bg-sand p-1 lg:col-span-1">
@@ -150,7 +153,7 @@ export function FilterBar(props: FilterBarProps) {
             name="q"
             value={props.query}
             onChange={(event) => props.onQueryChange(event.target.value)}
-            placeholder='חיפוש חופשי, למשל שם מלון, "אילת" או "ים המלח"'
+            placeholder='חיפוש חופשי, למשל שם מלון, "אילת" או "הרודס"'
             className="h-12 w-full rounded-2xl border border-black/8 bg-sand py-0 pr-10 pl-4 outline-none ring-sea/20 transition focus:bg-white focus:ring-4"
           />
         </label>
@@ -194,8 +197,8 @@ export function FilterBar(props: FilterBarProps) {
       {open && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <button type="button" className="absolute inset-0 bg-ink/40" onClick={() => setOpen(false)} aria-label="סגור סינון" />
-          <div className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-auto rounded-t-3xl bg-white p-5 shadow-xl">
-            <div className="mb-4 flex items-center justify-between">
+          <div className="absolute inset-x-0 bottom-0 flex h-[50dvh] flex-col rounded-t-3xl bg-white shadow-xl">
+            <div className="flex shrink-0 items-center justify-between px-5 pt-5 pb-3">
               <h2 className="text-lg font-semibold">סינון</h2>
               <button
                 type="button"
@@ -206,8 +209,8 @@ export function FilterBar(props: FilterBarProps) {
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="space-y-4">
-              <ChainCityView {...props} />
+            <div className="min-h-0 flex-1 space-y-4 overflow-auto px-5 pb-5">
+              <ChainCityView {...props} expandSelects />
               <AudienceChips {...props} />
             </div>
           </div>

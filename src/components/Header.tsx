@@ -19,24 +19,24 @@ export function Header({ fetchedAt, source, refreshing, liveCount, onRefresh }: 
 
   return (
     <header className="relative z-20 overflow-visible border-b border-ink/20 bg-canvas">
-      <div className="relative z-10 mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-[14px] sm:px-6">
-        <Link href="/" className="relative z-20 -my-10 shrink-0 sm:-my-16">
+      <div className="relative z-10 mx-auto flex max-w-7xl items-center justify-between gap-1.5 px-4 py-[14px] ps-0 sm:gap-3 sm:px-6">
+        <Link href="/" className="relative z-20 -my-10 -ms-4 shrink-0 sm:-my-16 sm:ms-0">
           <Image
             src="/logo.png"
             alt={SITE_NAME_HE}
             width={320}
             height={320}
-            className="h-32 w-32 object-contain sm:h-48 sm:w-48"
+            className="h-32 w-32 translate-x-3 object-contain sm:h-48 sm:w-48 sm:translate-x-0"
             priority
             unoptimized
           />
         </Link>
 
         <div className="flex min-w-0 flex-col items-end gap-1">
-          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-start">
+          <div className="grid grid-cols-[1.65fr_1fr] gap-1.5 sm:flex sm:items-start sm:gap-2">
             <a
               href="#subscribe"
-              className="header-action inline-flex h-11 items-center justify-center whitespace-nowrap rounded-full bg-sea px-4 text-white transition hover:bg-sea-dark"
+              className="header-action inline-flex h-11 items-center justify-center whitespace-nowrap rounded-full bg-sea px-5 text-white transition hover:bg-sea-dark sm:px-4"
             >
               הצטרפו לדילסי קלאב
             </a>

@@ -72,11 +72,10 @@ export function formatDateTime(iso: string): string {
     timeZone: "Asia/Jerusalem",
     day: "numeric",
     month: "numeric",
-    year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
   }).formatToParts(new Date(iso));
   const get = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? "";
-  return `${get("day")}.${get("month")}.${get("year")}, ${get("hour")}:${get("minute")}`;
+  return `${get("day")}.${get("month")}, ${get("hour")}:${get("minute")}`;
 }

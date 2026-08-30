@@ -15,6 +15,7 @@ interface MultiSelectProps<T extends string> {
   allLabel: string;
   onToggle: (id: T) => void;
   onClear: () => void;
+  expandInline?: boolean;
 }
 
 export function MultiSelect<T extends string>({
@@ -24,6 +25,7 @@ export function MultiSelect<T extends string>({
   allLabel,
   onToggle,
   onClear,
+  expandInline = false,
 }: MultiSelectProps<T>) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -57,7 +59,13 @@ export function MultiSelect<T extends string>({
         <ChevronDown className={`mr-auto h-4 w-4 text-ink-soft transition ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
-        <div className="absolute top-full right-0 z-30 mt-1 max-h-72 min-w-[14rem] overflow-auto rounded-2xl border border-black/8 bg-white p-2 shadow-lg">
+        <div
+          className={
+            expandInline
+              ? "mt-1 rounded-2xl border border-black/8 bg-white p-2"
+              : "absolute top-full right-0 z-30 mt-1 max-h-72 min-w-[14rem] overflow-auto rounded-2xl border border-black/8 bg-white p-2 shadow-lg"
+          }
+        >
           <label className="flex cursor-pointer items-center gap-2 rounded-xl px-2 py-1.5 text-sm hover:bg-sand/70">
             <input
               type="checkbox"
