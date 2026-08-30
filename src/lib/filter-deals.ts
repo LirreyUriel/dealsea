@@ -1,4 +1,5 @@
 import { dealCity, dealMatchesAudience, isWeekendDeal } from "./deal-tags";
+import { effectiveDiscountPercent } from "./discount";
 import type { Deal, DealFilters } from "./types";
 
 function normalizeSearch(value: string): string {
@@ -45,7 +46,7 @@ function matchesQuery(deal: Deal, query: string): boolean {
 
 function compareDeals(a: Deal, b: Deal, sort: DealFilters["sort"]): number {
   if (sort === "discount") {
-    return (b.discountPercent ?? -1) - (a.discountPercent ?? -1);
+    return effectiveDiscountPercent(b) - effectiveDiscountPercent(a);
   }
   if (sort === "price") {
     const aPrice = a.pricePerNight && a.pricePerNight > 0 ? a.pricePerNight : Number.POSITIVE_INFINITY;

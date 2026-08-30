@@ -1,3 +1,4 @@
+import { parseNightSpecificDiscount } from "./discount";
 import type { ParsedDealFields } from "./types";
 
 const HEBREW_MONTHS: Record<string, number> = {
@@ -38,53 +39,11 @@ function parseNumericDate(raw: string): string | null {
   return toIsoDate(day, month, year);
 }
 
-const NIGHT_ORDINALS: [RegExp, string][] = [
-  [/(?:1st|first)/i, "ראשון"],
-  [/(?:2nd|second)/i, "שני"],
-  [/(?:3rd|third)/i, "שלישי"],
-  [/(?:4th|fourth)/i, "רביעי"],
-  [/(?:5th|fifth)/i, "חמישי"],
-];
-
 function extractNightSpecificDiscount(
   text: string,
+  minNights: number | null,
 ): Pick<ParsedDealFields, "discountPercent" | "discountValue"> | null {
-  const hebrew = text.match(
-    /(?:ה)?ליל(?:ה|ות)\s+(?:ה)?(ראשון|שני(?:יה)?|שלישי(?:ת)?|רביעי(?:ת)?|חמישי(?:ת)?)\s+(?:ב-?\s*)?(?:הנחה\s+(?:של\s+)?)?(\d{1,2})\s*%/,
-  );
-  if (hebrew) {
-    const night = hebrew[1].replace(/יה$|ת$/, "");
-    return { discountPercent: null, discountValue: `לילה ${night} ב-${hebrew[2]}%` };
-  }
-
-  const hebrewReverse = text.match(
-    /(\d{1,2})\s*%\s*(?:הנחה\s+)?(?:ב|ל)?ליל(?:ה|ות)\s+(?:ה)?(ראשון|שני(?:יה)?|שלישי(?:ת)?|רביעי(?:ת)?|חמישי(?:ת)?)/,
-  );
-  if (hebrewReverse) {
-    const night = hebrewReverse[2].replace(/יה$|ת$/, "");
-    return { discountPercent: null, discountValue: `לילה ${night} ב-${hebrewReverse[1]}%` };
-  }
-
-  for (const [pattern, night] of NIGHT_ORDINALS) {
-    const english = text.match(
-      new RegExp(`(?:${pattern.source})\\s+night(?:\\s+(?:at|for))?\\s+(\\d{1,2})\\s*%`, "i"),
-    );
-    if (english) {
-      return { discountPercent: null, discountValue: `לילה ${night} ב-${english[1]}%` };
-    }
-    const englishReverse = text.match(
-      new RegExp(`(\\d{1,2})\\s*%\\s*(?:off\\s+)?(?:the\\s+)?(?:${pattern.source})\\s+night`, "i"),
-    );
-    if (englishReverse) {
-      return { discountPercent: null, discountValue: `לילה ${night} ב-${englishReverse[1]}%` };
-    }
-  }
-
-  if (/לילה\s+רביעי\s+מתנה|fourth night/i.test(text)) {
-    return { discountPercent: null, discountValue: "לילה רביעי מתנה" };
-  }
-
-  return null;
+  return parseNightSpecificDiscount(text, minNights);
 }
 
 function shekelOffLabel(text: string): string | null {
@@ -102,8 +61,11 @@ function withShekelOff(
   return { ...fields, discountValue: `${fields.discountValue} + ${shekelOff}` };
 }
 
-function extractDiscount(text: string): Pick<ParsedDealFields, "discountPercent" | "discountValue"> {
-  const nightSpecific = extractNightSpecificDiscount(text);
+function extractDiscount(
+  text: string,
+  minNights: number | null,
+): Pick<ParsedDealFields, "discountPercent" | "discountValue"> {
+  const nightSpecific = extractNightSpecificDiscount(text, minNights);
   if (nightSpecific) return withShekelOff(text, nightSpecific);
 
   const percentMatch = text.match(/(?:עד\s*)?(\d{1,2})\s*%/);
@@ -249,10 +211,11 @@ export function isDiscountAmountUsedAsPrice(text: string, price: number): boolea
 
 export function parseDealText(text: string): ParsedDealFields {
   const normalized = text.replace(/\s+/g, " ").trim();
+  const minNights = extractMinNights(normalized);
   return {
-    ...extractDiscount(normalized),
+    ...extractDiscount(normalized, minNights),
     pricePerNight: extractPrice(normalized),
-    minNights: extractMinNights(normalized),
+    minNights,
     ...extractDates(normalized),
   };
 }

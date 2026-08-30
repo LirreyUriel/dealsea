@@ -17,7 +17,7 @@ export function DealJsonLd({ deals, pageUrl, name }: { deals: Deal[]; pageUrl: s
     itemOffered: {
       "@type": "Hotel",
       name: deal.hotelName,
-      image: deal.imageUrl || deal.cityImageUrl ? `${SITE_URL}${deal.imageUrl || deal.cityImageUrl}` : undefined,
+      image: deal.imageUrl || deal.cityImageUrl ? `${SITE_URL}${deal.imageUrl || deal.cityImageUrl}` : `${SITE_URL}/logo.png`,
       address: dealCity(deal) ? { "@type": "PostalAddress", addressLocality: dealCity(deal), addressCountry: "IL" } : undefined,
     },
   }));

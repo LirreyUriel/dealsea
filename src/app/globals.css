@@ -39,7 +39,7 @@ body {
 
 .page-sun {
   pointer-events: none;
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: 0;
   background:
@@ -47,26 +47,14 @@ body {
     linear-gradient(135deg, rgba(255, 242, 180, 0.42) 0%, rgba(255, 248, 220, 0.12) 34%, transparent 58%);
 }
 
-.page-sun ~ * {
-  position: relative;
-  z-index: 1;
-}
-
-.header-beach {
-  background:
-    linear-gradient(to left, #9fd4e6 0%, #c8ebf4 38%, #efe3b8 72%, #e8d392 100%);
-}
-
-.header-beach::after {
+.page-sun::before {
   content: "";
-  pointer-events: none;
   position: absolute;
   inset-inline: 0;
-  bottom: -1px;
-  height: 12px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 48' preserveAspectRatio='none'%3E%3Cpath fill='%23f8f9fa' d='M0 28c160 16 320-18 480-10s320 26 480 14 320-22 480-6v22H0z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
+  top: 0;
+  height: 220px;
+  background: linear-gradient(to left, #9fd4e6 0%, #c8ebf4 38%, #efe3b8 72%, #e8d392 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, transparent 100%);
 }
 
 ::selection {

@@ -2,8 +2,6 @@ import type { MetadataRoute } from "next";
 import { allSeoRoutes } from "@/lib/seo-routes";
 import { SITE_URL } from "@/lib/site";
 
-export const dynamic = "force-dynamic";
-
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
   const landings = allSeoRoutes().map((route) => ({

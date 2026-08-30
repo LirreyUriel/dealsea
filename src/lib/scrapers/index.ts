@@ -47,17 +47,28 @@ async function withTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
   }
 }
 
+async function scrapePrimary(chainId: HotelChainId, dealsUrl: string): Promise<Deal[]> {
+  if (chainId === "isrotel") return scrapeIsrotelDeals(dealsUrl);
+  if (chainId === "fattal") return scrapeFattalDeals(dealsUrl);
+  if (chainId === "brown") return scrapeBrownDeals(dealsUrl);
+  if (chainId === "atlas") return scrapeAtlasDeals(dealsUrl);
+  if (chainId === "dan") return scrapeDanDeals(dealsUrl);
+  if (chainId === "africa-israel") return scrapeAfricaIsraelDeals(dealsUrl);
+  if (chainId === "herbert-samuel") return scrapeHerbertSamuelDeals(dealsUrl);
+  return [];
+}
+
 export async function fetchChainDeals(chainId: HotelChainId): Promise<Deal[]> {
   const chain = HOTEL_CHAINS.find((item) => item.id === chainId);
   if (!chain) return [];
 
-  if (chainId === "isrotel") return scrapeIsrotelDeals(chain.dealsUrl);
-  if (chainId === "fattal") return scrapeFattalDeals(chain.dealsUrl);
-  if (chainId === "brown") return scrapeBrownDeals(chain.dealsUrl);
-  if (chainId === "atlas") return scrapeAtlasDeals(chain.dealsUrl);
-  if (chainId === "dan") return scrapeDanDeals(chain.dealsUrl);
-  if (chainId === "africa-israel") return scrapeAfricaIsraelDeals(chain.dealsUrl);
-  if (chainId === "herbert-samuel") return scrapeHerbertSamuelDeals(chain.dealsUrl);
+  try {
+    const deals = await scrapePrimary(chainId, chain.dealsUrl);
+    if (deals.length > 0) return deals;
+  } catch {
+    // Fall through to Cheerio so a Playwright/host failure still returns live cards.
+  }
+
   return scrapeChainWithCheerio(chain);
 }
 
@@ -68,12 +79,15 @@ export async function fetchAllDeals(
   const key = cacheKey(chainIds);
   const cached = dealCache.get(key);
   if (!options?.bypassCache && cached && cached.expires > Date.now()) {
-    return {
-      ...cached.payload,
-      deals: await stampCityImages(
-        await stampHotelImages(stampFirstSeen(cached.payload.deals.map(sanitizeDeal))),
-      ),
-    };
+    let deals = cached.payload.deals.map(sanitizeDeal);
+    try {
+      deals = stampFirstSeen(deals);
+      deals = await stampHotelImages(deals);
+      deals = await stampCityImages(deals);
+    } catch {
+      // keep cached deals even if stamping fails
+    }
+    return { ...cached.payload, deals };
   }
 
   const targets = chainIds?.length
@@ -100,8 +114,17 @@ export async function fetchAllDeals(
     .filter((deal) => deal.source === "live")
     .map(sanitizeDeal);
 
+  let stamped = deals;
+  try {
+    stamped = stampFirstSeen(stamped);
+    stamped = await stampHotelImages(stamped);
+    stamped = await stampCityImages(stamped);
+  } catch {
+    // Image/cache stamping must never fail the deals API.
+  }
+
   const payload: DealsResponse = {
-    deals: await stampCityImages(await stampHotelImages(stampFirstSeen(deals))),
+    deals: stamped,
     source: "live",
     fetchedAt: new Date().toISOString(),
     asOf: israelToday(),

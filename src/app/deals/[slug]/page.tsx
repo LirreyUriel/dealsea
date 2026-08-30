@@ -1,28 +1,46 @@
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import { Dashboard } from "@/components/Dashboard";
-import { resolveSeoRoute } from "@/lib/seo-routes";
-import { absoluteUrl } from "@/lib/site";
+import { BreadcrumbJsonLd } from "@/components/SiteJsonLd";
+import { allSeoRoutes, resolveSeoRoute } from "@/lib/seo-routes";
+import { absoluteUrl, SITE_NAME, SITE_NAME_HE } from "@/lib/site";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
+export function generateStaticParams() {
+  return allSeoRoutes().map((route) => ({ slug: route.slug }));
+}
+
+export const dynamicParams = true;
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const route = resolveSeoRoute(slug);
   if (!route) return {};
-  const canonical = `/deals/${encodeURIComponent(route.slug)}`;
+  const path = `/deals/${encodeURIComponent(route.slug)}`;
+  const title = route.title;
   return {
-    title: route.title,
+    title,
     description: route.description,
-    alternates: { canonical: absoluteUrl(canonical) },
+    alternates: { canonical: absoluteUrl(path) },
     openGraph: {
-      title: route.title,
+      title: `${title} | ${SITE_NAME_HE}`,
       description: route.description,
       locale: "he_IL",
-      url: absoluteUrl(canonical),
+      siteName: SITE_NAME,
+      type: "website",
+      url: absoluteUrl(path),
+      images: [{ url: "/logo.png", alt: SITE_NAME_HE }],
     },
+    twitter: {
+      card: "summary_large_image",
+      title: `${title} | ${SITE_NAME_HE}`,
+      description: route.description,
+      images: ["/logo.png"],
+    },
+    robots: { index: true, follow: true },
   };
 }
 
@@ -34,7 +52,16 @@ export default async function DealLandingPage({ params }: PageProps) {
     permanentRedirect(`/deals/${route.slug}`);
   }
 
+  const path = `/deals/${route.slug}`;
   return (
-    <Dashboard pagePath={`/deals/${route.slug}`} initialFilters={route.filters} />
+    <>
+      <BreadcrumbJsonLd
+        items={[
+          { name: SITE_NAME_HE, url: absoluteUrl("/") },
+          { name: route.h1, url: absoluteUrl(path) },
+        ]}
+      />
+      <Dashboard pagePath={path} initialFilters={route.filters} />
+    </>
   );
 }

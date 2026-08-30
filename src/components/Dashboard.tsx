@@ -100,7 +100,6 @@ export function Dashboard({
 
   return (
     <div className="relative min-h-screen">
-      <div className="page-sun" aria-hidden />
       <Header
         fetchedAt={fetchedAt}
         source={source}
@@ -108,52 +107,54 @@ export function Dashboard({
         liveCount={visibleDeals.length}
         onRefresh={() => void loadDeals(true)}
       />
-      {visibleDeals.length > 0 && (
-        <DealJsonLd deals={visibleDeals} pageUrl={`${SITE_URL}${pagePath}`} name={HERO_H1} />
-      )}
-      <main className="mx-auto flex max-w-7xl flex-col gap-8 px-4 py-6 sm:px-6 sm:py-10">
-        <HeroHeading />
-
-        <div className="sticky top-0 z-20">
-          <FilterBar
-            query={query}
-            selectedChains={selectedChains}
-            cities={cities}
-            selectedCities={selectedCities}
-            weekendOnly={weekendOnly}
-            audiences={audiences}
-            sort={sort}
-            view={view}
-            onQueryChange={setQuery}
-            onToggleChain={toggleChain}
-            onClearChains={() => setSelectedChains([])}
-            onToggleCity={toggleCity}
-            onClearCities={() => setSelectedCities([])}
-            onWeekendOnlyChange={setWeekendOnly}
-            onToggleAudience={toggleAudience}
-            onSortChange={setSort}
-            onViewChange={setView}
-          />
-        </div>
-
-        {visibleDeals.length === 0 && refreshing ? (
-          <div className="rounded-3xl border border-dashed border-black/10 bg-white px-6 py-16 text-center">
-            <p className="text-lg font-semibold">טוען דילים מהאתרים...</p>
-            <p className="mt-1 text-sm text-ink-soft">ישרוטל, פתאל, בראון ואטלס נסרקים ברקע.</p>
-          </div>
-        ) : visibleDeals.length === 0 ? (
-          <EmptyState />
-        ) : (
-          <DealSections
-            deals={visibleDeals}
-            asOf={asOf}
-            view={view}
-            page={page}
-            onPageChange={setPage}
-            hiddenTags={hiddenTags}
-          />
+      <div className="relative isolate">
+        <div className="page-sun" aria-hidden />
+        {visibleDeals.length > 0 && (
+          <DealJsonLd deals={visibleDeals} pageUrl={`${SITE_URL}${pagePath}`} name={HERO_H1} />
         )}
-      </main>
+        <main className="relative z-10 mx-auto flex max-w-7xl flex-col gap-8 px-4 py-6 sm:px-6 sm:py-10">
+          <HeroHeading />
+
+          <div className="sticky top-0 z-20">
+            <FilterBar
+              query={query}
+              selectedChains={selectedChains}
+              cities={cities}
+              selectedCities={selectedCities}
+              weekendOnly={weekendOnly}
+              audiences={audiences}
+              sort={sort}
+              view={view}
+              onQueryChange={setQuery}
+              onToggleChain={toggleChain}
+              onClearChains={() => setSelectedChains([])}
+              onToggleCity={toggleCity}
+              onClearCities={() => setSelectedCities([])}
+              onWeekendOnlyChange={setWeekendOnly}
+              onToggleAudience={toggleAudience}
+              onSortChange={setSort}
+              onViewChange={setView}
+            />
+          </div>
+
+          {visibleDeals.length === 0 && refreshing ? (
+            <div className="rounded-3xl border border-dashed border-black/10 bg-white px-6 py-16 text-center">
+              <p className="text-lg font-semibold">דילסי יצא לסריקה!</p>
+            </div>
+          ) : visibleDeals.length === 0 ? (
+            <EmptyState />
+          ) : (
+            <DealSections
+              deals={visibleDeals}
+              asOf={asOf}
+              view={view}
+              page={page}
+              onPageChange={setPage}
+              hiddenTags={hiddenTags}
+            />
+          )}
+        </main>
+      </div>
     </div>
   );
 }

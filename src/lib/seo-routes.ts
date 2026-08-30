@@ -43,9 +43,9 @@ function cityRoute(city: string): SeoRoute {
     slug: citySlug(city),
     aliases: CITY_ALIASES[city] ?? [],
     kind: "city",
-    title: `מבצעי מלונות ב${city} | ${city} דילים`,
+    title: `מבצעי מלונות ב${city}`,
     h1: `מבצעי מלונות ב${city}`,
-    description: `דילים חיים למלונות ב${city} — השוואה מרשתות ישרוטל, פתאל, בראון, דן ועוד, במחירים בשקלים.`,
+    description: `דילים חיים למלונות ב${city}. דילסי סורק בזמן אמת את ישרוטל, פתאל, בראון, דן ועוד — מחירים בשקלים ישירות מהאתרים הרשמיים.`,
     filters: { cities: [city] },
   };
 }
@@ -57,7 +57,7 @@ function chainRoute(chainId: HotelChainId, nameHe: string): SeoRoute {
     kind: "chain",
     title: `מבצעי מלונות ${nameHe}`,
     h1: `מבצעי מלונות ${nameHe}`,
-    description: `כל המבצעים החיים של רשת ${nameHe} — הנחות, מחירי לילה וחבילות נופש בישראל.`,
+    description: `כל המבצעים החיים של רשת ${nameHe}. דילסי משווה הנחות, מחירי לילה וחבילות נופש בישראל ישירות מהאתר הרשמי.`,
     filters: { chains: [chainId] },
   };
 }
@@ -69,7 +69,7 @@ const STATIC_ROUTES: SeoRoute[] = [
     kind: "audience",
     title: "מבצעי מילואים וכוחות הביטחון",
     h1: "מבצעי מילואים וכוחות הביטחון",
-    description: "דילים למשרתי מילואים, חיילים וכוחות הביטחון במלונות בישראל.",
+    description: "דילים למשרתי מילואים, חיילים וכוחות הביטחון במלונות בישראל. דילסי מרכז הטבות חיילים ומילואים מרשתות המלונאות המובילות.",
     filters: { audiences: ["idf" as AudienceTag] },
   },
   {
@@ -78,7 +78,7 @@ const STATIC_ROUTES: SeoRoute[] = [
     kind: "audience",
     title: "מבצעים לחברי מועדון",
     h1: "מבצעים לחברי מועדון",
-    description: "מבצעי מועדון חיים — The Club, Club Brown, E-DAN ועוד.",
+    description: "מבצעי מועדון חיים — The Club, Club Brown, E-DAN ועוד. דילסי מציג הנחות לחברי מועדוני המלונות בישראל.",
     filters: { audiences: ["club" as AudienceTag] },
   },
   {
@@ -87,7 +87,7 @@ const STATIC_ROUTES: SeoRoute[] = [
     kind: "weekend",
     title: "מבצעי סוף שבוע במלונות",
     h1: "מבצעי סוף שבוע במלונות",
-    description: "דילים לסופ״ש — שישי-שבת וחבילות weekend במלונות בישראל.",
+    description: "דילים לסוף שבוע במלונות בישראל — שישי–שבת וחבילות weekend. דילסי סורק בזמן אמת את הרשתות הרשמיות.",
     filters: { weekendOnly: true },
   },
   ...HOTEL_CHAINS.map((chain) => chainRoute(chain.id, chain.nameHe)),

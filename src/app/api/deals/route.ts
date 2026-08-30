@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-
-export const maxDuration = 120;
 import { isHotelChainId } from "@/lib/chains";
 import { filterAndSortDeals } from "@/lib/filter-deals";
+import { israelToday } from "@/lib/format";
 import { fetchAllDeals } from "@/lib/scrapers";
 import type { AudienceTag, HotelChainId, SortKey } from "@/lib/types";
+
+export const maxDuration = 60;
 
 function parseSort(value: string | null): SortKey {
   if (value === "discount" || value === "price" || value === "hotel" || value === "expiration") return value;
@@ -29,17 +30,35 @@ export async function GET(request: NextRequest) {
     .map((value) => value.trim())
     .filter((value): value is AudienceTag => value === "idf" || value === "club");
 
-  const payload = await fetchAllDeals(chains.length ? chains : undefined, {
-    bypassCache: params.get("refresh") === "1",
-  });
-  const deals = filterAndSortDeals(payload.deals, {
-    chains,
-    cities,
-    weekendOnly,
-    audiences,
-    query,
-    sort,
-  });
+  try {
+    const payload = await fetchAllDeals(chains.length ? chains : undefined, {
+      bypassCache: params.get("refresh") === "1",
+    });
+    const deals = filterAndSortDeals(payload.deals, {
+      chains,
+      cities,
+      weekendOnly,
+      audiences,
+      query,
+      sort,
+    });
 
-  return NextResponse.json({ ...payload, deals });
+    return NextResponse.json({ ...payload, deals });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        deals: [],
+        source: "live" as const,
+        fetchedAt: new Date().toISOString(),
+        asOf: israelToday(),
+        errors: [
+          {
+            chainId: "isrotel" as const,
+            message: error instanceof Error ? error.message : "Failed to load deals",
+          },
+        ],
+      },
+      { status: 200 },
+    );
+  }
 }

@@ -18,7 +18,7 @@ export function Header({ fetchedAt, source, refreshing, liveCount, onRefresh }: 
   const formatted = fetchedAt ? formatDateTime(fetchedAt) : null;
 
   return (
-    <header className="header-beach relative overflow-visible">
+    <header className="relative z-20 overflow-visible border-b border-ink/20 bg-canvas">
       <div className="relative z-10 mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-[14px] sm:px-6">
         <Link href="/" className="relative z-20 -my-10 shrink-0 sm:-my-16">
           <Image

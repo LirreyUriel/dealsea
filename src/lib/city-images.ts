@@ -118,10 +118,14 @@ async function downloadImage(sourceUrl: string, city: string): Promise<string | 
   if (bytes.length < MIN_BYTES) return null;
   const type = String(response.headers["content-type"] ?? "");
   if (type.includes("svg") || type.includes("html")) return null;
-  mkdirSync(PUBLIC_DIR, { recursive: true });
-  const fileName = `${slugFor(city)}.${extensionFor(type, sourceUrl)}`;
-  writeFileSync(fileOnDisk(fileName), bytes);
-  return publicUrl(fileName);
+  try {
+    mkdirSync(PUBLIC_DIR, { recursive: true });
+    const fileName = `${slugFor(city)}.${extensionFor(type, sourceUrl)}`;
+    writeFileSync(fileOnDisk(fileName), bytes);
+    return publicUrl(fileName);
+  } catch {
+    return null;
+  }
 }
 
 async function resolveCityImage(city: string): Promise<ManifestEntry> {
