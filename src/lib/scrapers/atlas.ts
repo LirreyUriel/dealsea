@@ -246,7 +246,7 @@ function toDeal(input: {
   };
 }
 
-function cardImageCandidate($: cheerio.CheerioAPI, card: cheerio.Cheerio<cheerio.Element>): string {
+function cardImageCandidate(card: ReturnType<cheerio.CheerioAPI>): string {
   const wrap = card.closest("a, article, .card, .elementor-column, .elementor-widget, .elementor-element");
   const img = wrap.find("img").first().add(card.parent().find("img").first());
   return (
@@ -284,7 +284,7 @@ function parseHomepageCards(html: string): Deal[] {
       pageTitle: title,
       url,
       index: 0,
-      imageUrl: firstCardImageUrl(cardImageCandidate($, card), ATLAS_ORIGIN) || pageImage,
+      imageUrl: firstCardImageUrl(cardImageCandidate(card), ATLAS_ORIGIN) || pageImage,
     });
     if (!deal || seen.has(deal.id)) return;
     seen.add(deal.id);
