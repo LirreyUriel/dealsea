@@ -42,3 +42,4 @@ next-env.d.ts
 /data/subscribers.json
 /data/hotel-images.json
 /public/hotels/
+/deals-cache.json

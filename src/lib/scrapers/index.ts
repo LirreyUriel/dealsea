@@ -1,4 +1,5 @@
 import { HOTEL_CHAINS } from "../chains";
+import { loadRemoteDealsCache, shouldUseRemoteDealsCache } from "../deals-cache";
 import { stampFirstSeen } from "../first-seen";
 import { israelToday } from "../format";
 import { stampCityImages } from "../city-images";
@@ -26,6 +27,25 @@ function sanitizeDeal(deal: Deal): Deal {
 
 const CHAIN_TIMEOUT_MS = 90_000;
 const CACHE_TTL_MS = 5 * 60_000;
+const PLAYWRIGHT_CHAINS = new Set<HotelChainId>(["isrotel", "fattal", "atlas", "africa-israel"]);
+const LIVE_CONCURRENCY = process.env.CI ? 2 : HOTEL_CHAINS.length;
+
+let playwrightLock = Promise.resolve();
+
+function withPlaywrightLock<T>(work: () => Promise<T>): Promise<T> {
+  const run = playwrightLock.then(work, work);
+  playwrightLock = run.then(
+    () => undefined,
+    () => undefined,
+  );
+  return run;
+}
+
+export interface FetchDealsOptions {
+  bypassCache?: boolean;
+  forceLive?: boolean;
+  skipStamps?: boolean;
+}
 
 const dealCache = new Map<string, { expires: number; payload: DealsResponse }>();
 
@@ -58,7 +78,7 @@ async function scrapePrimary(chainId: HotelChainId, dealsUrl: string): Promise<D
   return [];
 }
 
-export async function fetchChainDeals(chainId: HotelChainId): Promise<Deal[]> {
+async function scrapeChain(chainId: HotelChainId): Promise<Deal[]> {
   const chain = HOTEL_CHAINS.find((item) => item.id === chainId);
   if (!chain) return [];
 
@@ -72,48 +92,15 @@ export async function fetchChainDeals(chainId: HotelChainId): Promise<Deal[]> {
   return scrapeChainWithCheerio(chain);
 }
 
-export async function fetchAllDeals(
-  chainIds?: HotelChainId[],
-  options?: { bypassCache?: boolean },
-): Promise<DealsResponse> {
-  const key = cacheKey(chainIds);
-  const cached = dealCache.get(key);
-  if (!options?.bypassCache && cached && cached.expires > Date.now()) {
-    let deals = cached.payload.deals.map(sanitizeDeal);
-    try {
-      deals = stampFirstSeen(deals);
-      deals = await stampHotelImages(deals);
-      deals = await stampCityImages(deals);
-    } catch {
-      // keep cached deals even if stamping fails
-    }
-    return { ...cached.payload, deals };
+export async function fetchChainDeals(chainId: HotelChainId): Promise<Deal[]> {
+  if (process.env.CI && PLAYWRIGHT_CHAINS.has(chainId)) {
+    return withPlaywrightLock(() => scrapeChain(chainId));
   }
+  return scrapeChain(chainId);
+}
 
-  const targets = chainIds?.length
-    ? HOTEL_CHAINS.filter((chain) => chainIds.includes(chain.id))
-    : HOTEL_CHAINS;
-
-  const errors: DealsResponse["errors"] = [];
-  const settled = await Promise.allSettled(
-    targets.map(async (chain) => {
-      try {
-        return await withTimeout(fetchChainDeals(chain.id), chain.nameHe);
-      } catch (error) {
-        errors.push({
-          chainId: chain.id,
-          message: error instanceof Error ? error.message : "שגיאה לא ידועה בשליפת דילים",
-        });
-        return [];
-      }
-    }),
-  );
-
-  const deals = settled
-    .flatMap((result) => (result.status === "fulfilled" ? result.value : []))
-    .filter((deal) => deal.source === "live")
-    .map(sanitizeDeal);
-
+async function stampDeals(deals: Deal[], skipStamps?: boolean): Promise<Deal[]> {
+  if (skipStamps) return deals;
   let stamped = deals;
   try {
     stamped = stampFirstSeen(stamped);
@@ -122,9 +109,76 @@ export async function fetchAllDeals(
   } catch {
     // Image/cache stamping must never fail the deals API.
   }
+  return stamped;
+}
+
+async function mapPool<T, R>(items: T[], limit: number, worker: (item: T) => Promise<R>): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let next = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, async () => {
+      while (next < items.length) {
+        const index = next;
+        next += 1;
+        results[index] = await worker(items[index]);
+      }
+    }),
+  );
+  return results;
+}
+
+export async function fetchAllDeals(
+  chainIds?: HotelChainId[],
+  options?: FetchDealsOptions,
+): Promise<DealsResponse> {
+  const key = cacheKey(chainIds);
+  const cached = dealCache.get(key);
+  if (!options?.bypassCache && cached && cached.expires > Date.now()) {
+    return {
+      ...cached.payload,
+      deals: await stampDeals(cached.payload.deals.map(sanitizeDeal), options?.skipStamps),
+    };
+  }
+
+  if (shouldUseRemoteDealsCache() && !options?.forceLive) {
+    const remote = await loadRemoteDealsCache({
+      bustCache: options?.bypassCache,
+      chainIds,
+    });
+    if (remote) {
+      const payload: DealsResponse = {
+        ...remote,
+        deals: await stampDeals(remote.deals.map(sanitizeDeal), options?.skipStamps),
+      };
+      dealCache.set(key, { expires: Date.now() + CACHE_TTL_MS, payload });
+      return payload;
+    }
+  }
+
+  const targets = chainIds?.length
+    ? HOTEL_CHAINS.filter((chain) => chainIds.includes(chain.id))
+    : HOTEL_CHAINS;
+
+  const errors: DealsResponse["errors"] = [];
+  const batches = await mapPool(targets, LIVE_CONCURRENCY, async (chain) => {
+    try {
+      return await withTimeout(fetchChainDeals(chain.id), chain.nameHe);
+    } catch (error) {
+      errors.push({
+        chainId: chain.id,
+        message: error instanceof Error ? error.message : "שגיאה לא ידועה בשליפת דילים",
+      });
+      return [];
+    }
+  });
+
+  const deals = batches
+    .flat()
+    .filter((deal) => deal.source === "live")
+    .map(sanitizeDeal);
 
   const payload: DealsResponse = {
-    deals: stamped,
+    deals: await stampDeals(deals, options?.skipStamps),
     source: "live",
     fetchedAt: new Date().toISOString(),
     asOf: israelToday(),

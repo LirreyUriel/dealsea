@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "scrape:cache": "tsx scripts/scrape-to-cache.ts"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
@@ -27,6 +28,7 @@
     "eslint": "^9.34.0",
     "eslint-config-next": "^15.5.2",
     "tailwindcss": "^4.1.12",
+    "tsx": "^4.23.13",
     "typescript": "^5.9.2"
   }
 }
