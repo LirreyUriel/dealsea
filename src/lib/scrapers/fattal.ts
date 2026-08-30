@@ -41,6 +41,7 @@ interface FattalRawCard {
   highlights: string;
   priceText: string;
   bookingUrl: string;
+  imageUrl: string;
 }
 
 function cleanText(value: string | null | undefined): string {
@@ -117,6 +118,7 @@ function toDeal(raw: FattalRawCard): Deal | null {
     bookingUrl: raw.bookingUrl,
     location: inferLocation(hotelName),
     source: "live",
+    imageUrl: raw.imageUrl || null,
   };
 }
 
@@ -226,6 +228,15 @@ async function extractRawCards(page: Page): Promise<FattalRawCard[]> {
         [...card.querySelectorAll("div, span")]
           .map((node) => (node.textContent || "").replace(/\s+/g, " ").trim())
           .find((text) => /₪\s*\d/.test(text) && text.length < 40) ?? "";
+      const imageUrl =
+        [...card.querySelectorAll("img")]
+          .map((img) => {
+            const node = img as HTMLImageElement;
+            return node.currentSrc || node.src || node.getAttribute("data-src") || "";
+          })
+          .find((src) => src && !/logo|icon|sprite|pixel|1x1|\.svg/i.test(src)) ??
+        (card.getAttribute("style") || "").match(/url\(["']?(https?:[^"')]+)["']?\)/)?.[1] ??
+        "";
 
       cards.push({
         dealId,
@@ -237,6 +248,7 @@ async function extractRawCards(page: Page): Promise<FattalRawCard[]> {
         highlights,
         priceText,
         bookingUrl: parsedUrl.toString(),
+        imageUrl,
       });
     }
 

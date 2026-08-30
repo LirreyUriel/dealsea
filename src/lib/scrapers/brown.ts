@@ -32,6 +32,7 @@ interface BrownRawCard {
   description: string;
   priceText: string;
   bookingUrl: string;
+  imageUrl: string;
   fromWeekendSale?: boolean;
 }
 
@@ -92,6 +93,7 @@ function toDeal(raw: BrownRawCard): Deal | null {
     bookingUrl: raw.bookingUrl,
     location: inferLocation(hotelName),
     source: "live",
+    imageUrl: raw.imageUrl || null,
   };
 }
 
@@ -108,6 +110,17 @@ function parseListingHtml(html: string, fromWeekendSale = false): BrownRawCard[]
       } catch {
         bookingUrl = "";
       }
+      const imageRaw =
+        card.find("img").first().attr("src") ||
+        card.find("img").first().attr("data-src") ||
+        card.find("[style*='background']").first().attr("style")?.match(/url\(["']?(https?:[^"')]+)["']?\)/)?.[1] ||
+        "";
+      let imageUrl = "";
+      try {
+        imageUrl = imageRaw ? new URL(imageRaw, BROWN_ORIGIN).toString() : "";
+      } catch {
+        imageUrl = "";
+      }
       return {
         hotelName: cleanText(card.find(".deal-hotel-name").first().text()),
         title: cleanText(card.find(".deal-name").first().text()),
@@ -115,6 +128,7 @@ function parseListingHtml(html: string, fromWeekendSale = false): BrownRawCard[]
         description: cleanText(card.find(".deal-description").first().text()),
         priceText: cleanText(card.find(".new-price").first().text() || card.find(".deal-price").first().text()),
         bookingUrl,
+        imageUrl,
         fromWeekendSale,
       };
     })
