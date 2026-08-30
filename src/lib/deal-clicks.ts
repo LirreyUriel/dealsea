@@ -47,7 +47,7 @@ export function addDealClick(input: {
   weekendFilterOn?: boolean;
   clubFilterOn?: boolean;
   message?: string;
-}): { ok: true } | { ok: false; message: string } {
+}): { ok: true; entry: DealClick } | { ok: false; message: string } {
   const userId = (input.userId ?? "").trim();
   const dealId = (input.dealId ?? "").trim();
   const hotelName = (input.hotelName ?? "").trim();
@@ -66,8 +66,7 @@ export function addDealClick(input: {
     (input.message ?? "").trim() ||
     `${userId}, תפוס את הדיל: ${hotelName || dealId || bookingUrl}, ${discountLabel}, מילואים: ${flag(idfFilterOn)}, סוף שבוע: ${flag(weekendFilterOn)}, מועדון: ${flag(clubFilterOn)}`;
 
-  const list = readJsonFile<DealClick[]>(FILE, []);
-  list.push({
+  const entry: DealClick = {
     userId,
     dealId,
     hotelName,
@@ -80,7 +79,9 @@ export function addDealClick(input: {
     clubFilterOn,
     message,
     createdAt: new Date().toISOString(),
-  });
+  };
+  const list = readJsonFile<DealClick[]>(FILE, []);
+  list.push(entry);
   writeJsonFile(FILE, list);
-  return { ok: true };
+  return { ok: true, entry };
 }

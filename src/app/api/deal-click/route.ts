@@ -26,5 +26,6 @@ export async function POST(request: NextRequest) {
   if (!result.ok) {
     return NextResponse.json({ ok: false, message: result.message }, { status: 400 });
   }
+  console.log("[deal-click]", result.entry.message, JSON.stringify(result.entry));
   return NextResponse.json({ ok: true });
 }

@@ -16,7 +16,7 @@ export function addSubscriber(input: {
   name?: string;
   email?: string;
   userId?: string;
-}): { ok: true } | { ok: false; message: string } {
+}): { ok: true; entry: Subscriber } | { ok: false; message: string } {
   const trimmedName = (input.name ?? "").trim();
   const trimmedEmail = (input.email ?? "").trim().toLowerCase();
   const userId = (input.userId ?? "").trim();
@@ -29,13 +29,14 @@ export function addSubscriber(input: {
     return { ok: false, message: "כתובת המייל כבר רשומה לקלאב." };
   }
 
-  list.push({
+  const entry: Subscriber = {
     userId,
     name: trimmedName,
     email: trimmedEmail,
     message: `${userId}, ${trimmedName}, ${trimmedEmail}`,
     createdAt: new Date().toISOString(),
-  });
+  };
+  list.push(entry);
   writeJsonFile(FILE, list);
-  return { ok: true };
+  return { ok: true, entry };
 }

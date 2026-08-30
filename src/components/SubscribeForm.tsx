@@ -14,11 +14,14 @@ export function SubscribeForm() {
     event.preventDefault();
     setStatus("saving");
     setMessage("");
+    const userId = getOrCreateUserId();
+    const savedName = name.trim();
+    const savedEmail = email.trim();
     try {
       const response = await fetch("/api/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, userId: getOrCreateUserId() }),
+        body: JSON.stringify({ name: savedName, email: savedEmail, userId }),
       });
       const payload = (await response.json()) as { ok: boolean; message?: string };
       if (!response.ok || !payload.ok) {
@@ -26,8 +29,12 @@ export function SubscribeForm() {
         setMessage(payload.message ?? "ההרשמה נכשלה. נסו שוב.");
         return;
       }
-      // club_subscribe: successful דילסי קלאב signup (נתראה!) — no email/name
-      track("club_subscribe");
+      track("club_subscribe", {
+        userId,
+        name: savedName,
+        email: savedEmail,
+        message: `${userId}, ${savedName}, ${savedEmail}`,
+      });
       setStatus("ok");
       setName("");
       setEmail("");

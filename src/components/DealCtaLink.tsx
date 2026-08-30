@@ -84,15 +84,21 @@ export function DealCtaLink({
       className={className}
       onClick={() => {
         const userId = getOrCreateUserId();
+        const discount = deal.discountPercent == null ? "—" : `${deal.discountPercent}%`;
+        const idf = filters.idfFilterOn ? "כן" : "לא";
+        const weekend = filters.weekendFilterOn ? "כן" : "לא";
+        const club = filters.clubFilterOn ? "כן" : "לא";
+        const message = `${userId}, תפוס את הדיל: ${deal.hotelName}, ${discount}, מילואים: ${idf}, סוף שבוע: ${weekend}, מועדון: ${club}`;
         track("grab_deal", {
+          message,
+          userId,
           dealId: deal.id,
           chain: deal.chainId,
           hotelName: deal.hotelName,
-          userId,
-          discountPercent: deal.discountPercent,
-          idfFilterOn: filters.idfFilterOn,
-          weekendFilterOn: filters.weekendFilterOn,
-          clubFilterOn: filters.clubFilterOn,
+          discountPercent: discount,
+          idfFilterOn: idf,
+          weekendFilterOn: weekend,
+          clubFilterOn: club,
         });
         logDealClick(deal, href, filters);
       }}
