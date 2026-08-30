@@ -40,7 +40,7 @@ function fileOnDisk(fileName: string): string {
   return path.join(PUBLIC_DIR, fileName);
 }
 
-function hasUsableImage(entry: ManifestEntry | undefined): boolean {
+function hasUsableImage(entry: ManifestEntry | undefined): entry is ManifestEntry & { path: string } {
   if (!entry?.path) return false;
   const name = entry.path.replace(/^\/hotels\//, "");
   return existsSync(fileOnDisk(name));

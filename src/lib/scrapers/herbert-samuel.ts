@@ -145,7 +145,7 @@ function parseOfferPage(html: string, pageUrl: string): Deal[] {
 
     const chunks: string[] = [];
     let bookingHref = "";
-    let cursor = heading.closest(".elementor-widget, .elementor-element").length
+    const cursor = heading.closest(".elementor-widget, .elementor-element").length
       ? heading.closest(".elementor-widget, .elementor-element")
       : heading;
     let next = cursor.next();
