@@ -40,21 +40,22 @@ function fileOnDisk(fileName: string): string {
   return path.join(PUBLIC_DIR, fileName);
 }
 
-function isRemoteUrl(value: string | null | undefined): value is string {
+function isRemoteUrl(value: string | null | undefined): boolean {
   return Boolean(value && /^https?:\/\//i.test(value));
 }
 
 function hasLocalFile(entry: ManifestEntry | undefined): entry is ManifestEntry & { path: string } {
-  if (!entry?.path || isRemoteUrl(entry.path)) return false;
-  const name = entry.path.replace(/^\/hotels\//, "");
+  const filePath = entry?.path;
+  if (!filePath || isRemoteUrl(filePath)) return false;
+  const name = filePath.replace(/^\/hotels\//, "");
   return existsSync(fileOnDisk(name));
 }
 
 function hotelSrc(entry: ManifestEntry | undefined, existing?: string | null): string | null {
   if (hasLocalFile(entry)) return entry.path;
-  if (isRemoteUrl(entry?.sourceUrl)) return entry.sourceUrl;
-  if (isRemoteUrl(entry?.path)) return entry.path;
-  if (isRemoteUrl(existing)) return existing;
+  if (entry && isRemoteUrl(entry.sourceUrl)) return entry.sourceUrl ?? null;
+  if (entry && isRemoteUrl(entry.path)) return entry.path;
+  if (isRemoteUrl(existing)) return existing ?? null;
   return null;
 }
 
