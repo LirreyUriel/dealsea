@@ -33,10 +33,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           cp deals-cache.json /tmp/deals-cache.json
+          cp vercel.json /tmp/vercel.json
           git checkout --orphan scrape-cache-publish
           git rm -rf --quiet . || true
           find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
           cp /tmp/deals-cache.json deals-cache.json
-          git add deals-cache.json
+          cp /tmp/vercel.json vercel.json
+          git add deals-cache.json vercel.json
           git commit -m "Refresh live deals cache"
           git push -f origin scrape-cache-publish:scrape-cache
