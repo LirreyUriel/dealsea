@@ -34,7 +34,7 @@ export function Dashboard({
   const [selectedCities, setSelectedCities] = useState<string[]>(initialFilters?.cities ?? []);
   const [weekendOnly, setWeekendOnly] = useState(initialFilters?.weekendOnly ?? false);
   const [audiences, setAudiences] = useState<AudienceTag[]>(initialFilters?.audiences ?? []);
-  const [sort, setSort] = useState<SortKey>(initialFilters?.sort ?? "expiration");
+  const [sort, setSort] = useState<SortKey>(initialFilters?.sort ?? "discount");
   const [view, setView] = useState<"grid" | "table">("grid");
   const [page, setPage] = useState(1);
   const [refreshing, setRefreshing] = useState(!initialData);

@@ -9,7 +9,7 @@ export const maxDuration = 60;
 
 function parseSort(value: string | null): SortKey {
   if (value === "discount" || value === "price" || value === "hotel" || value === "expiration") return value;
-  return "expiration";
+  return "discount";
 }
 
 export async function GET(request: NextRequest) {

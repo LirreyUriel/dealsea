@@ -116,6 +116,6 @@ export function filtersFromRoute(route: SeoRoute): DealFilters {
     weekendOnly: route.filters.weekendOnly ?? false,
     audiences: route.filters.audiences ?? [],
     query: "",
-    sort: "price",
+    sort: "discount",
   };
 }

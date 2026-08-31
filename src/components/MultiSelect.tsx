@@ -16,6 +16,7 @@ interface MultiSelectProps<T extends string> {
   onToggle: (id: T) => void;
   onClear: () => void;
   expandInline?: boolean;
+  compact?: boolean;
 }
 
 export function MultiSelect<T extends string>({
@@ -26,6 +27,7 @@ export function MultiSelect<T extends string>({
   onToggle,
   onClear,
   expandInline = false,
+  compact = false,
 }: MultiSelectProps<T>) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -52,10 +54,10 @@ export function MultiSelect<T extends string>({
         type="button"
         onClick={() => setOpen((current) => !current)}
         aria-expanded={open}
-        className="flex h-12 w-full min-w-0 items-center gap-2 rounded-2xl border border-black/8 bg-sand px-3 outline-none ring-sea/20 transition hover:bg-white focus:bg-white focus:ring-4 lg:min-w-[11rem]"
+        className={`flex h-12 w-full min-w-0 items-center gap-2 rounded-2xl border border-black/8 bg-sand px-3 outline-none ring-sea/20 transition hover:bg-white focus:bg-white focus:ring-4 ${compact ? "lg:min-w-[8.25rem]" : "lg:min-w-[11rem]"}`}
       >
-        <span className="text-ink-soft">{label}</span>
-        <span className="max-w-[10rem] truncate font-medium">{summary}</span>
+        <span className="shrink-0 text-ink-soft">{label}</span>
+        <span className={`truncate font-medium ${compact ? "max-w-[6.5rem]" : "max-w-[10rem]"}`}>{summary}</span>
         <ChevronDown className={`mr-auto h-4 w-4 text-ink-soft transition ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
